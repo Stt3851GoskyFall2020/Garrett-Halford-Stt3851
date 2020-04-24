@@ -1,0 +1,125 @@
+---
+title: "Chapter 5 Homework"
+author: "Garrett Halford"
+date: "4/20/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+library(MASS)
+attach(Boston)
+```
+
+A.
+```{r}
+mu.hat<-mean(medv)
+mu.hat
+```
+This is the population mean estimate mu hat.
+
+B.
+```{r}
+sample.size<-dim(Boston)[1]
+SE<-sd(medv)/sqrt(sample.size)
+SE
+```
+The standard error of mu hat is 0.4088611.
+
+C.
+```{r}
+library(boot)
+set.seed(1)
+boot.s <- function(data, index) {
+    mu <- mean(data[index])
+    return (mu)
+}
+result<-boot(medv, boot.s, 2500)
+result
+```
+The standard error given from the bootstrap is 0.4092428 which is close to the standard error given of mu hat, 0.4088611.
+
+D.
+```{r}
+t.test(medv)
+```
+
+```{r}
+ci<-c(22.53281-2*.4092428,  22.53281+2*.4092428)
+ci
+```
+The confidence interval from the t test has a difference of about 0.02 from the computation seen above. These two measurements are extremely close.
+
+E.
+```{r}
+median(medv)
+```
+The median estimate of medv is 21.2.
+
+F.
+```{r}
+set.seed(1)
+boot.s1 <- function(data, index) {
+    med <- median(data[index])
+    return (med)
+}
+result1<-boot(medv, boot.s1, 2500)
+result1
+```
+The error for the median bootstrap is 0.3789064 which is smaller than the error for the mean bootstrap.
+
+
+###Part 2
+```{r}
+CFB<-read.csv("CFB2018completeISLR.csv")
+attach(CFB)
+```
+
+##Cross Validation
+```{r}
+set.seed(1)
+train <- sample(857,500)
+lr<- lm(Zsagarin~Fr5star+coachexp_school+lysagarin,data=CFB,subset=train)
+mean((Zsagarin-predict(lr,CFB))[-train]^2)
+```
+
+```{r}
+set.seed(1)
+lr1<- lm(Zsagarin~Fr5star+coachexp_school+lysagarin+I(Fr5star^2)+I(coachexp_school^2),data=CFB,subset=train)
+mean((Zsagarin-predict(lr1,CFB))[-train]^2)
+```
+The  squared error in these two models are close but ultimately the model with quadratic terms has a smaller error. These errors are not ideal but they are not bad enough to cause model modification. For the first model, the error is saying that the average squared distance of the points from the predictive line is 0.5029701 and the distance for the second model is 0.5010656. It can be determined based off of error that the second model is more efficient.
+
+##Leave One Out
+```{r}
+set.seed(1)
+glm.f<-glm(Zsagarin~Fr5star+coachexp_school+lysagarin)
+err<-cv.glm(CFB,glm.f)
+err$delta
+```
+
+```{r}
+set.seed(1)
+glm.f1<-glm(Zsagarin~Fr5star+I(Fr5star^2)+coachexp_school+I(coachexp_school^2)+lysagarin)
+err1<-cv.glm(CFB,glm.f1)
+err1$delta
+```
+From the error in both models, it can be determined that the model with the quadratic terms seems to perform better.
+
+##K Fold Cross Validation 
+```{r}
+set.seed(1)
+glm.f<-glm(Zsagarin~Fr5star+coachexp_school+lysagarin)
+err2<-cv.glm(CFB,glm.f,K=5)
+err2$delta
+
+glm.f1<-glm(Zsagarin~Fr5star+I(Fr5star^2)+coachexp_school+I(coachexp_school^2)+lysagarin)
+err3<-cv.glm(CFB,glm.f1,K=5)
+err3$delta
+```
+Once again, the model with the quadratic terms in it seems to be more efficient because of a smaller error. For these two models, the K fold is 5.
