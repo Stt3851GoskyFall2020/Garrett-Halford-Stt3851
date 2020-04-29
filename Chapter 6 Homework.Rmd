@@ -1,0 +1,135 @@
+---
+title: "Chapter 6 Homework"
+author: "Garrett Halford"
+date: "4/23/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+##9.
+#a.
+```{r}
+Col<-read.csv("College.csv")
+```
+
+```{r}
+Col1<-Col[-1]
+attach(Col)
+```
+
+```{r}
+set.seed(1)
+train<-sample(777, 502, replace = FALSE)
+
+training<-Col1[train,]
+testing<-Col1[-train,]
+```
+
+##b.
+```{r}
+mod<-lm(Apps~.,data = training)
+pred<-predict(mod,testing)
+mean((pred-testing$Apps)^2)
+```
+The mean squared test error for the prediction from the linear model is 880830.6.
+
+##c.
+```{r}
+library(glmnet)
+```
+
+```{r}
+matrix.training<- model.matrix(Apps ~ ., data = training)
+matrix.testing<- model.matrix(Apps ~ ., data = testing)
+grid <-10 ^ seq(10, -2, length = 100)
+ridge<-glmnet(matrix.training, training$Apps, alpha = 0, lambda = grid, thresh = 1e-12)
+ridge.cv<-cv.glmnet(matrix.training, training$Apps, alpha = 0, lambda = grid, thresh = 1e-12)
+bestlam<-ridge.cv$lambda.min
+bestlam
+```
+
+```{r}
+pred.r<-predict(ridge,newx = matrix.testing,s=bestlam)
+mean((pred.r-testing$Apps)^2)
+```
+The ridge regression test error is slightly lower than the error obtained from the linear model. It is 880822.6.
+
+##d.
+```{r}
+lasso<-glmnet(matrix.training,training$Apps,alpha = 1,lambda = grid, thresh=1e-12)
+lasso.cv<-cv.glmnet(matrix.training,training$Apps,alpha=1,lambda = grid,thresh=1e-12)
+bestlam1<-lasso.cv$lambda.min
+bestlam1
+```
+
+```{r}
+pred.l<-predict(lasso,newx = matrix.testing,s=bestlam1)
+mean((pred.l-testing$Apps)^2)
+```
+This is the mean squared test error for the lasso regression which is higher than both the ridge and linear regression models. The obtained error is 886110.2.
+
+```{r}
+predict(lasso, s = bestlam1, type = "coefficients")
+```
+These are the components with non zero coefficients.
+
+##e.
+```{r}
+library(pls)
+```
+
+```{r}
+model.pcr<-pcr(Apps~., data=training, scale=T, validation="CV")
+validationplot(model.pcr, val.type="MSEP")
+```
+The number of components should be 5. There is a considerable amount of change until we get to 5. The change seems to level off after that.
+
+```{r}
+predict.pcr<-predict(model.pcr,testing,ncomp = 5)
+mean((testing$Apps-c(predict.pcr))^2)
+
+```
+The mean squared test error of the pcr is much higher than that of any other model. It is 1725971. There were 5 components.
+
+##f.
+```{r}
+model.pls<- plsr(Apps ~ ., data = training, scale = TRUE, validation = "CV")
+validationplot(model.pls, val.type = "MSEP")
+```
+The number of components for this model will be 6. The majority of the change in MSEP happens within 2 to 3 components but the leveling off occurs after 5 components.
+
+```{r}
+prediction.pls<- predict(model.pls, testing, ncomp = 6)
+mean((prediction.pls-testing$Apps)^2)
+```
+The mean squared test error prediction for the partial least squared regression model is 919790.2. There were 6 components.
+
+##g.
+```{r}
+test.avg<- mean(testing$Apps)
+1 - mean((pred - testing$Apps)^2) / mean((test.avg - testing$Apps)^2)
+1 - mean((pred.r - testing$Apps)^2) / mean((test.avg - testing$Apps)^2)
+1 - mean((pred.l - testing$Apps)^2) / mean((test.avg - testing$Apps)^2)
+1 - mean((predict.pcr - testing$Apps)^2) / mean((test.avg - testing$Apps)^2)
+1 - mean((prediction.pls - testing$Apps)^2) / mean((test.avg - testing$Apps)^2)
+```
+These are the r squared values for the linear, ridge, lasso, principal components, and partial least squares regression models respectively. The model for ridge regression seems to be the most accurate just based off of the r squared values. All of the models have a good r squared value with the exception of the principal components regression. The other 4 models can predcit with a good amount of accuracy.
+
+```{r}
+mean((pred-testing$Apps)^2)
+mean((pred.r-testing$Apps)^2)
+mean((pred.l-testing$Apps)^2)
+mean((c(predict.pcr) - testing$Apps)^2)
+mean((prediction.pls-testing$Apps)^2)
+```
+These are the mean squared errors in the same order as before. These resuts back up what is explained by the r squared values. The model with the highest error, principal components regression, has the lowest r squared value. On the other hand, the ridge regression, which has the highest r squared value also has the lowest error. The errors do not differ greatly with exception of the principal components regression. All of the models except for principal compenents regression would be accurate predictors.
+
+
+
+
+
