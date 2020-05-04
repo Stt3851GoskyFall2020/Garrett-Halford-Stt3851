@@ -1,0 +1,39 @@
+---
+title: "Project 2.1"
+author: "Garrett Halford"
+date: "5/4/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+library(readxl)
+housing <- read_excel("Housing (6).xlsx")
+#View(housing)
+head(housing)
+```
+
+##a.
+First Candidate Model
+```{r}
+housing1 <- subset(housing, lot<8)
+housing2 <- housing1[c(-4), ]
+pow<-1/2
+pricet<-(housing2$price)^pow
+lg2<-lm(pricet~sqrt(lot)+bedrooms+garagesize+elem,data = housing2)
+summary(lg2)
+```
+This was the final model in project 1 therefore it is the first model.
+
+##b.
+Second Candidate Model
+```{r}
+library(leaps)
+regfit1<-regsubsets(price~.,data=housing2,nvmax=13,method="forward")
+summary(regfit1)
+```
